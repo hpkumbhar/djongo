@@ -6,7 +6,7 @@ SQL constructors.
 import re
 import typing
 from logging import getLogger
-
+import time
 from dataclasses import dataclass
 from pymongo import MongoClient
 from pymongo import ReturnDocument
@@ -48,6 +48,7 @@ class CountDistinctFunc:
 @dataclass
 class CountWildcardFunc:
     alias_name: str = None
+
 
 
 class Query:
@@ -297,7 +298,6 @@ class SelectQuery(Query):
                         ret.append(None)
             else:
                 ret.append(doc[selected.alias])
-
         return tuple(ret)
 
 
@@ -686,7 +686,6 @@ class AlterQuery(VoidQuery):
             },
             multi=True
         )
-
     def _index(self):
         self.db_ref[self.left_table].create_index(
             self.field_dir,
@@ -816,8 +815,15 @@ class Result:
 
         else:
             try:
-                return handler(self, statement)
-
+                try:
+                    return handler(self, statement)
+                except Exception as e:
+                    time.sleep(0.5)
+                    try:
+                        return handler(self, statement)
+                    except Exception as e:
+                        raise e
+                    
             except MigrationError:
                 raise
 
@@ -959,5 +965,4 @@ class Result:
     }
 
 # TODO: Need to do this
-
 
